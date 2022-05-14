@@ -13,7 +13,6 @@ uniform sampler2D myTextureSampler;
 void main(){
 
 	// Output color = color of the texture at the specified UV
-    
     vec3 ambient = vec3(.1, .1, .1);
     vec3 LightColor = vec3(1, 1, 1);
     vec3 n = normalize(vertexpos_modelspace);
@@ -21,5 +20,4 @@ void main(){
     vec3 MaterialDiffuseColor = texture(myTextureSampler, UV).bgr;
     float cosTheta = max(0, dot(n, l));
     color = mix(cosTheta * MaterialDiffuseColor * LightColor, texture(myTextureSampler, UV).bgr, .2);
-    
 }
