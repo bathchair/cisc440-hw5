@@ -2,6 +2,7 @@
 
 // Interpolated values from the vertex shaders
 in vec2 UV;
+in vec3 vertexpos_modelspace;
 
 // Ouput data
 out vec3 color;
@@ -12,5 +13,13 @@ uniform sampler2D myTextureSampler;
 void main(){
 
 	// Output color = color of the texture at the specified UV
-	color = texture( myTextureSampler, UV ).rgb;
+    
+    vec3 ambient = vec3(.1, .1, .1);
+    vec3 LightColor = vec3(1, 1, 1);
+    vec3 n = normalize(vertexpos_modelspace);
+    vec3 l = normalize(vec3(.5, -1, -1));
+    vec3 MaterialDiffuseColor = texture(myTextureSampler, UV).bgr;
+    float cosTheta = max(0, dot(n, l));
+    color = mix(cosTheta * MaterialDiffuseColor * LightColor, texture(myTextureSampler, UV).bgr, .2);
+    
 }

@@ -6,6 +6,7 @@ layout(location = 1) in vec2 vertexUV;
 
 // Output data ; will be interpolated for each fragment.
 out vec2 UV;
+out vec3 vertexpos_modelspace;
 
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
@@ -17,5 +18,6 @@ void main(){
 	
 	// UV of the vertex. No special space for this one.
 	UV = vertexUV;
+    vertexpos_modelspace = vertexPosition_modelspace;
 }
 
