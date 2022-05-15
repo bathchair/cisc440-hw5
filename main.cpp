@@ -20,41 +20,8 @@ using namespace glm;
 #include <common/controls.hpp>
 #include <common/objloader.hpp>
 
-// Control point
-std::vector<glm::vec3> cp;
-int cpCount = 25;
-
 // Frame counter
-int i = 0;
 bool isPaused = false;
-
-void set_control_points() {
-    cp.push_back(glm::vec3(30.0, 30.0, 30.0));
-    cp.push_back(glm::vec3(30.0, 35.0, 30.0));
-    cp.push_back(glm::vec3(30.0, 40.0, 30.0));
-    cp.push_back(glm::vec3(35.0, 40.0, 30.0));
-    cp.push_back(glm::vec3(40.0, 40.0, 30.0));
-    cp.push_back(glm::vec3(35.0, 35.0, 35.0));
-    cp.push_back(glm::vec3(35.0, 35.0, 30.0));
-    cp.push_back(glm::vec3(35.0, 35.0, 25.0));
-    cp.push_back(glm::vec3(25.0, 30.0, 25.0));
-    cp.push_back(glm::vec3(20.0, 35.0, 25.0));
-    cp.push_back(glm::vec3(15.0, 30.0, 20.0));
-    cp.push_back(glm::vec3(10.0, 30.0, 15.0));
-    cp.push_back(glm::vec3(5.0, 25.0, 10.0));
-    cp.push_back(glm::vec3(0.0, 20.0, 5.0));
-    cp.push_back(glm::vec3(-5.0, 15.0, 0.0));
-    cp.push_back(glm::vec3(-10.0, 10.0, -5.0));
-    cp.push_back(glm::vec3(-15.0, 5.0, -10.0));
-    cp.push_back(glm::vec3(-20.0, 0.0, -15.0));
-    cp.push_back(glm::vec3(-25.0, -5.0, -20.0));
-    cp.push_back(glm::vec3(-30.0, -10.0, -25.0));
-    cp.push_back(glm::vec3(-30.0, -15.0, -30.0));
-    cp.push_back(glm::vec3(-30.0, -20.0, -25.0));
-    cp.push_back(glm::vec3(-30.0, -20.0, -20.0));
-    cp.push_back(glm::vec3(-30.0, -20.0, -15.0));
-    cp.push_back(glm::vec3(-30.0, -20.0, -10.0));
-}
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -141,8 +108,6 @@ int main( void )
     std::vector<glm::vec3> normals; // Won't be used at the moment.
     bool res = loadOBJ("monster.obj", vertices, uvs, normals);
     
-    set_control_points();
-    
     // register all callbacks
     glfwSetKeyCallback(window, key_callback);
 
@@ -160,10 +125,6 @@ int main( void )
 
     do{
         
-        if (i >= cpCount) {
-            i -= cpCount;
-        }
-        
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -173,10 +134,11 @@ int main( void )
         // Compute the MVP matrix from keyboard and mouse input
         computeMatricesFromInputs();
         glm::mat4 ProjectionMatrix = getProjectionMatrix();
-        glm::mat4 ViewMatrix = glm::lookAt(cp[i],   // Camera location in World Space
+        glm::mat4 ViewMatrix = glm::lookAt(glm::vec3(30,30,30),   // Camera location in World Space
                                        glm::vec3(0,0,0),                 // and looks at the origin
                                        glm::vec3(0,1,0)                  // Head is up (set to 0,-1,0 to look upside-down)
-                                       );        glm::mat4 ModelMatrix = glm::mat4(1.0);
+                                       );
+        glm::mat4 ModelMatrix = glm::mat4(1.0);
         glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
         // Send our transformation to the currently bound shader,
@@ -222,9 +184,6 @@ int main( void )
         // Swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
-        
-        if (!isPaused)
-            i++;
 
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
