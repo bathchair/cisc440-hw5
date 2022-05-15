@@ -13,6 +13,8 @@ GLFWwindow* window;
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtx/transform2.hpp>
 using namespace glm;
 
 #include <common/shader.hpp>
@@ -22,12 +24,111 @@ using namespace glm;
 
 // Frame counter
 bool isPaused = false;
+glm::mat4 Projection;
+glm::mat4 View;
+GLuint MatrixID;
+GLuint vertexbuffer;
+GLuint colorbuffer;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
   // pause
     if (key == GLFW_KEY_P && action == GLFW_PRESS)
         isPaused = !isPaused;
+}
+
+void draw_triangle(glm::mat4 Model, float r, float g, float b)
+{
+  // Our ModelViewProjection : multiplication of our 3 matrices
+  glm::mat4 MVP = Projection * View * Model;
+
+  // make this transform available to shaders
+  glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+
+  // 1st attribute buffer : vertices
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+  glVertexAttribPointer(0,                  // attribute. 0 to match the layout in the shader.
+            3,                  // size
+            GL_FLOAT,           // type
+            GL_FALSE,           // normalized?
+            0,                  // stride
+            (void*)0            // array buffer offset
+            );
+  
+  // all vertices same color
+
+  GLfloat g_color_buffer_data[] = {
+    r, g, b,
+    r, g, b,
+    r, g, b,
+  };
+  
+  glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW);
+  
+  // 2nd attribute buffer : colors
+  glEnableVertexAttribArray(1);
+  glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+  glVertexAttribPointer(1,                                // attribute. 1 to match the layout in the shader.
+            3,                                // size
+            GL_FLOAT,                         // type
+            GL_FALSE,                         // normalized?
+            0,                                // stride
+            (void*)0                          // array buffer offset
+            );
+
+  // Draw the triangle !
+  glDrawArrays(GL_TRIANGLES, 0, 3); // 3 indices starting at 0 -> 1 triangle
+  
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+}
+
+void draw_right_triangle(glm::mat4 Model, float r, float g, float b)
+{
+  glm::mat4 S = glm::shearX3D (glm::mat4(1.0f), 0.5f, 0.0f);
+  glm::mat4 T = glm::translate(glm::vec3(-1.0f, 1.0f, 0.0f));
+  
+  draw_triangle(Model * glm::inverse(T) * S * T, r, g, b);
+}
+
+void draw_square(glm::mat4 Model, float r, float g, float b)
+{
+  glm::mat4 M = glm::scale(glm::vec3(-1.0f, -1.0f, 0.0f));
+
+  //  draw_right_triangle(Model * M, 1.0-r, 1.0-g, 1.0-b);
+  draw_right_triangle(Model * M, r, g, b);
+  draw_right_triangle(Model, r, g, b);
+}
+
+void draw_cube(glm::mat4 Model, float r, float g, float b)
+{
+  // +Z, -Z
+  
+  draw_square(Model * glm::translate(glm::vec3(0.0f, 0.0f, +1.0f)), r, g, b);
+  draw_square(Model * glm::translate(glm::vec3(0.0f, 0.0f, -1.0f)), 0.5*r, 0.5*g, 0.5*b);
+
+  // +X, -X
+
+  glm::mat4 RY = glm::rotate((float) (0.5*M_PI),
+                 glm::vec3(    0.0f,
+                    1.0f,
+                    0.0f));
+
+  draw_square(Model * glm::translate(glm::vec3(+1.0f, 0.0f, 0.0f)) * RY, g, b, r);
+  draw_square(Model * glm::translate(glm::vec3(-1.0f, 0.0f, 0.0f)) * RY, 0.5*g, 0.5*b, 0.5*r);
+
+  // +Y, -Y
+
+  glm::mat4 RX = glm::rotate((float) (0.5*M_PI),
+                 glm::vec3(    1.0f,
+                    0.0f,
+                    0.0f));
+
+  draw_square(Model * glm::translate(glm::vec3(0.0f, +1.0f, 0.0f)) * RX, b, r, g);
+  draw_square(Model * glm::translate(glm::vec3(0.0f, -1.0f, 0.0f)) * RX, 0.5*b, 0.5*r, 0.5*g);
+
 }
 
 int main( void )
@@ -83,6 +184,17 @@ int main( void )
 
     // Cull triangles which normal is not towards the camera
     glEnable(GL_CULL_FACE);
+    
+    static const GLfloat g_vertex_buffer_data[] = {
+      -1.0f, -1.0f, 0.0f,
+      1.0f, -1.0f, 0.0f,
+      0.0f,  1.0f, 0.0f,
+    };
+    static const GLushort g_element_buffer_data[] = { 0, 1, 2 };
+    
+    glGenBuffers(1, &vertexbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
@@ -95,7 +207,8 @@ int main( void )
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
     // Load the texture
-    GLuint Texture = loadDDS("Monster-Base.DDS");
+    // TEXTURE FOR ASTEROID
+    GLuint Texture = loadDDS("TexturesCom_RockSmooth0188_1_seamless_S.dds");
     //std::vector <std::string> texvarname;
     //texvarname.push_back("monster-base");
     
@@ -103,25 +216,24 @@ int main( void )
     GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
     // Read our .obj file
-    std::vector<glm::vec3> vertices;
-    std::vector<glm::vec2> uvs;
-    std::vector<glm::vec3> normals; // Won't be used at the moment.
-    bool res = loadOBJ("monster.obj", vertices, uvs, normals);
+    std::vector<glm::vec3> vertices_ast;
+    std::vector<glm::vec2> uvs_ast;
+    std::vector<glm::vec3> normals_ast; // Won't be used at the moment.
+    bool ast = loadOBJ("asteroid.obj", vertices_ast, uvs_ast, normals_ast);
     
     // register all callbacks
     glfwSetKeyCallback(window, key_callback);
 
     // Load it into a VBO
+    GLuint vertexbuffer_ast;
+    glGenBuffers(1, &vertexbuffer_ast);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_ast);
+    glBufferData(GL_ARRAY_BUFFER, vertices_ast.size() * sizeof(glm::vec3), &vertices_ast[0], GL_STATIC_DRAW);
 
-    GLuint vertexbuffer;
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
-
-    GLuint uvbuffer;
-    glGenBuffers(1, &uvbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-    glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+    GLuint uvbuffer_ast;
+    glGenBuffers(1, &uvbuffer_ast);
+    glBindBuffer(GL_ARRAY_BUFFER, uvbuffer_ast);
+    glBufferData(GL_ARRAY_BUFFER, uvs_ast.size() * sizeof(glm::vec2), &uvs_ast[0], GL_STATIC_DRAW);
 
     do{
         
@@ -150,10 +262,10 @@ int main( void )
         glBindTexture(GL_TEXTURE_2D, Texture);
         // Set our "myTextureSampler" sampler to use Texture Unit 0
         glUniform1i(TextureID, 0);
-
+        
         // 1rst attribute buffer : vertices
         glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_ast);
         glVertexAttribPointer(
             0,                  // attribute
             3,                  // size
@@ -165,7 +277,7 @@ int main( void )
 
         // 2nd attribute buffer : UVs
         glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, uvbuffer_ast);
         glVertexAttribPointer(
             1,                                // attribute
             2,                                // size
@@ -174,9 +286,9 @@ int main( void )
             0,                                // stride
             (void*)0                          // array buffer offset
         );
-
-        // Draw the triangle !
-        glDrawArrays(GL_TRIANGLES, 0, vertices.size() );
+        
+        // Draw the asteroid !
+        glDrawArrays(GL_TRIANGLES, 0, vertices_ast.size() );
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
@@ -190,8 +302,8 @@ int main( void )
            glfwWindowShouldClose(window) == 0 );
 
     // Cleanup VBO and shader
-    glDeleteBuffers(1, &vertexbuffer);
-    glDeleteBuffers(1, &uvbuffer);
+    glDeleteBuffers(1, &vertexbuffer_ast);
+    glDeleteBuffers(1, &uvbuffer_ast);
     glDeleteProgram(programID);
     glDeleteTextures(1, &Texture);
     glDeleteVertexArrays(1, &VertexArrayID);
