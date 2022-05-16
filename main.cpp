@@ -31,42 +31,122 @@ GLuint vertexbuffer;
 GLuint colorbuffer;
 
 glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(0.0f, 0.0f, 0.0f));
+
 float x_position = 0.0f;
 float y_position = 0.0f;
 float z_position = 0.0f;
 
+std::vector <glm::vec3> position_array;
+std::vector <float> size_array;
+
+GLuint programID;
+GLuint Texture;
+GLuint TextureID;
+GLuint vertexbuffer_ast;
+GLuint uvbuffer_ast;
+std::vector<glm::vec3> vertices_ast;
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    
   // pause
     if (key == GLFW_KEY_P && action == GLFW_PRESS)
         isPaused = !isPaused;
   // move left
     if (key == GLFW_KEY_W && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
-        z_position += 1.0f;
-        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(x_position, y_position, z_position));
+        position_array[0].z += 1.0f;
+        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[0].x, position_array[0].y, position_array[0].z));
     } else if (key == GLFW_KEY_S && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
-        z_position -= 1.0f;
-        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(x_position, y_position, z_position));
+        position_array[0].z -= 1.0f;
+        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[0].x, position_array[0].y, position_array[0].z));
     } else if (key == GLFW_KEY_A && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
-        x_position -= 1.0f;
-        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(x_position, y_position, z_position));
+        position_array[0].x -= 1.0f;
+        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[0].x, position_array[0].y, position_array[0].z));
     } else if (key == GLFW_KEY_D && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
-        x_position += 1.0f;
-        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(x_position, y_position, z_position));
+        position_array[0].x += 1.0f;
+        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[0].x, position_array[0].y, position_array[0].z));
     } else if (key == GLFW_KEY_UP && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
-        y_position += 1.0f;
-        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(x_position, y_position, z_position));
+        position_array[0].y += 1.0f;
+        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[0].x, position_array[0].y, position_array[0].z));
     } else if (key == GLFW_KEY_DOWN && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
-        y_position -= 1.0f;
-        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(x_position, y_position, z_position));
+        position_array[0].y -= 1.0f;
+        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[0].x, position_array[0].y, position_array[0].z));
     }
   // move up
   // move don
   // move right
 }
 
+void draw(glm::mat4 M) {
+    // Use our shader
+    glUseProgram(programID);
+    
+    
+
+    // Compute the MVP matrix from keyboard and mouse input
+    computeMatricesFromInputs();
+    glm::mat4 ProjectionMatrix = getProjectionMatrix();
+    glm::mat4 ViewMatrix = glm::lookAt(glm::vec3(30,30,30),   // Camera location in World Space
+                                   glm::vec3(0,0,0),                 // and looks at the origin
+                                   glm::vec3(0,1,0)                  // Head is up (set to 0,-1,0 to look upside-down)
+                                   );
+    //glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+    glm::mat4 MVP = ProjectionMatrix * ViewMatrix * M;
+
+    // Send our transformation to the currently bound shader,
+    // in the "MVP" uniform
+    glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+
+    // Bind our texture in Texture Unit
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, Texture);
+    // Set our "myTextureSampler" sampler to use Texture Unit 0
+    glUniform1i(TextureID, 0);
+    
+    // 1rst attribute buffer : vertices
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_ast);
+    glVertexAttribPointer(
+        0,                  // attribute
+        3,                  // size
+        GL_FLOAT,           // type
+        GL_FALSE,           // normalized?
+        0,                  // stride
+        (void*)0            // array buffer offset
+    );
+
+    // 2nd attribute buffer : UVs
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, uvbuffer_ast);
+    glVertexAttribPointer(
+        1,                                // attribute
+        2,                                // size
+        GL_FLOAT,                         // type
+        GL_FALSE,                         // normalized?
+        0,                                // stride
+        (void*)0                          // array buffer offset
+    );
+    
+    // Draw the asteroid!
+    glDrawArrays(GL_TRIANGLES, 0, vertices_ast.size() );
+
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+}
+
 int main( void )
 {
+    
+    position_array.push_back(glm::vec3(0, 0, 0));
+    size_array.push_back(2.0f);
+    
+    position_array.push_back(glm::vec3(5, 1, 5));
+    position_array.push_back(glm::vec3(2, 2, 1));
+    position_array.push_back(glm::vec3(10, 1, 7));
+    size_array.push_back(1.0f);
+    size_array.push_back(1.0f);
+    size_array.push_back(1.0f);
+    
     // Initialise GLFW
     if( !glfwInit() )
     {
@@ -135,22 +215,21 @@ int main( void )
     glBindVertexArray(VertexArrayID);
 
     // Create and compile our GLSL program from the shaders
-    GLuint programID = LoadShaders("TransformVertexShader.vertexshader", "TextureFragmentShader.fragmentshader" );
+    programID = LoadShaders("TransformVertexShader.vertexshader", "TextureFragmentShader.fragmentshader" );
 
     // Get a handle for our "MVP" uniform
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
     // Load the texture
     // TEXTURE FOR ASTEROID
-    GLuint Texture = loadDDS("TexturesCom_RockSmooth0188_1_seamless_S.dds");
+    Texture = loadDDS("TexturesCom_RockSmooth0188_1_seamless_S.dds");
     //std::vector <std::string> texvarname;
     //texvarname.push_back("monster-base");
     
     // Get a handle for our "myTextureSampler" uniform
-    GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
+    TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
     // Read our .obj file
-    std::vector<glm::vec3> vertices_ast;
     std::vector<glm::vec2> uvs_ast;
     std::vector<glm::vec3> normals_ast; // Won't be used at the moment.
     bool ast = loadOBJ("asteroid.obj", vertices_ast, uvs_ast, normals_ast);
@@ -159,12 +238,10 @@ int main( void )
     glfwSetKeyCallback(window, key_callback);
 
     // Load it into a VBO
-    GLuint vertexbuffer_ast;
     glGenBuffers(1, &vertexbuffer_ast);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_ast);
     glBufferData(GL_ARRAY_BUFFER, vertices_ast.size() * sizeof(glm::vec3), &vertices_ast[0], GL_STATIC_DRAW);
 
-    GLuint uvbuffer_ast;
     glGenBuffers(1, &uvbuffer_ast);
     glBindBuffer(GL_ARRAY_BUFFER, uvbuffer_ast);
     glBufferData(GL_ARRAY_BUFFER, uvs_ast.size() * sizeof(glm::vec2), &uvs_ast[0], GL_STATIC_DRAW);
@@ -174,57 +251,11 @@ int main( void )
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Use our shader
-        glUseProgram(programID);
-
-        // Compute the MVP matrix from keyboard and mouse input
-        computeMatricesFromInputs();
-        glm::mat4 ProjectionMatrix = getProjectionMatrix();
-        glm::mat4 ViewMatrix = glm::lookAt(glm::vec3(30,30,30),   // Camera location in World Space
-                                       glm::vec3(0,0,0),                 // and looks at the origin
-                                       glm::vec3(0,1,0)                  // Head is up (set to 0,-1,0 to look upside-down)
-                                       );
-        glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
-
-        // Send our transformation to the currently bound shader,
-        // in the "MVP" uniform
-        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-
-        // Bind our texture in Texture Unit
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, Texture);
-        // Set our "myTextureSampler" sampler to use Texture Unit 0
-        glUniform1i(TextureID, 0);
-        
-        // 1rst attribute buffer : vertices
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_ast);
-        glVertexAttribPointer(
-            0,                  // attribute
-            3,                  // size
-            GL_FLOAT,           // type
-            GL_FALSE,           // normalized?
-            0,                  // stride
-            (void*)0            // array buffer offset
-        );
-
-        // 2nd attribute buffer : UVs
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, uvbuffer_ast);
-        glVertexAttribPointer(
-            1,                                // attribute
-            2,                                // size
-            GL_FLOAT,                         // type
-            GL_FALSE,                         // normalized?
-            0,                                // stride
-            (void*)0                          // array buffer offset
-        );
-        
-        // Draw the asteroid!
-        glDrawArrays(GL_TRIANGLES, 0, vertices_ast.size() );
-
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
+        for (int i = 0; i < position_array.size(); i++) {
+            glm::mat4 ScaleMatrix = glm::scale(glm::vec3(size_array[i], size_array[i], size_array[i]));
+            glm::mat4 TranslationMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[0].x + position_array[i].x, position_array[0].y + position_array[i].y, position_array[0].z + position_array[i].z));
+            draw(TranslationMatrix * ScaleMatrix);
+        }
 
         // Swap buffers
         glfwSwapBuffers(window);
