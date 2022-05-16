@@ -35,100 +35,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
   // pause
     if (key == GLFW_KEY_P && action == GLFW_PRESS)
         isPaused = !isPaused;
-}
-
-void draw_triangle(glm::mat4 Model, float r, float g, float b)
-{
-  // Our ModelViewProjection : multiplication of our 3 matrices
-  glm::mat4 MVP = Projection * View * Model;
-
-  // make this transform available to shaders
-  glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-
-  // 1st attribute buffer : vertices
-  glEnableVertexAttribArray(0);
-  glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-  glVertexAttribPointer(0,                  // attribute. 0 to match the layout in the shader.
-            3,                  // size
-            GL_FLOAT,           // type
-            GL_FALSE,           // normalized?
-            0,                  // stride
-            (void*)0            // array buffer offset
-            );
-  
-  // all vertices same color
-
-  GLfloat g_color_buffer_data[] = {
-    r, g, b,
-    r, g, b,
-    r, g, b,
-  };
-  
-  glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW);
-  
-  // 2nd attribute buffer : colors
-  glEnableVertexAttribArray(1);
-  glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-  glVertexAttribPointer(1,                                // attribute. 1 to match the layout in the shader.
-            3,                                // size
-            GL_FLOAT,                         // type
-            GL_FALSE,                         // normalized?
-            0,                                // stride
-            (void*)0                          // array buffer offset
-            );
-
-  // Draw the triangle !
-  glDrawArrays(GL_TRIANGLES, 0, 3); // 3 indices starting at 0 -> 1 triangle
-  
-  glDisableVertexAttribArray(0);
-  glDisableVertexAttribArray(1);
-}
-
-void draw_right_triangle(glm::mat4 Model, float r, float g, float b)
-{
-  glm::mat4 S = glm::shearX3D (glm::mat4(1.0f), 0.5f, 0.0f);
-  glm::mat4 T = glm::translate(glm::vec3(-1.0f, 1.0f, 0.0f));
-  
-  draw_triangle(Model * glm::inverse(T) * S * T, r, g, b);
-}
-
-void draw_square(glm::mat4 Model, float r, float g, float b)
-{
-  glm::mat4 M = glm::scale(glm::vec3(-1.0f, -1.0f, 0.0f));
-
-  //  draw_right_triangle(Model * M, 1.0-r, 1.0-g, 1.0-b);
-  draw_right_triangle(Model * M, r, g, b);
-  draw_right_triangle(Model, r, g, b);
-}
-
-void draw_cube(glm::mat4 Model, float r, float g, float b)
-{
-  // +Z, -Z
-  
-  draw_square(Model * glm::translate(glm::vec3(0.0f, 0.0f, +1.0f)), r, g, b);
-  draw_square(Model * glm::translate(glm::vec3(0.0f, 0.0f, -1.0f)), 0.5*r, 0.5*g, 0.5*b);
-
-  // +X, -X
-
-  glm::mat4 RY = glm::rotate((float) (0.5*M_PI),
-                 glm::vec3(    0.0f,
-                    1.0f,
-                    0.0f));
-
-  draw_square(Model * glm::translate(glm::vec3(+1.0f, 0.0f, 0.0f)) * RY, g, b, r);
-  draw_square(Model * glm::translate(glm::vec3(-1.0f, 0.0f, 0.0f)) * RY, 0.5*g, 0.5*b, 0.5*r);
-
-  // +Y, -Y
-
-  glm::mat4 RX = glm::rotate((float) (0.5*M_PI),
-                 glm::vec3(    1.0f,
-                    0.0f,
-                    0.0f));
-
-  draw_square(Model * glm::translate(glm::vec3(0.0f, +1.0f, 0.0f)) * RX, b, r, g);
-  draw_square(Model * glm::translate(glm::vec3(0.0f, -1.0f, 0.0f)) * RX, 0.5*b, 0.5*r, 0.5*g);
-
+  // move left
+  // move up
+  // move don
+  // move right
 }
 
 int main( void )
@@ -201,7 +111,7 @@ int main( void )
     glBindVertexArray(VertexArrayID);
 
     // Create and compile our GLSL program from the shaders
-    GLuint programID = LoadShaders( "TransformVertexShader.vertexshader", "TextureFragmentShader.fragmentshader" );
+    GLuint programID = LoadShaders("TransformVertexShader.vertexshader", "TextureFragmentShader.fragmentshader" );
 
     // Get a handle for our "MVP" uniform
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
@@ -251,6 +161,7 @@ int main( void )
                                        glm::vec3(0,1,0)                  // Head is up (set to 0,-1,0 to look upside-down)
                                        );
         glm::mat4 ModelMatrix = glm::mat4(1.0);
+        ModelMatrix = glm::translate(ModelMatrix, glm::vec3(10.0f, 0.0f, 0.0f));
         glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
         // Send our transformation to the currently bound shader,
@@ -287,7 +198,7 @@ int main( void )
             (void*)0                          // array buffer offset
         );
         
-        // Draw the asteroid !
+        // Draw the asteroid!
         glDrawArrays(GL_TRIANGLES, 0, vertices_ast.size() );
 
         glDisableVertexAttribArray(0);
