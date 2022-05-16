@@ -30,12 +30,36 @@ GLuint MatrixID;
 GLuint vertexbuffer;
 GLuint colorbuffer;
 
+glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(0.0f, 0.0f, 0.0f));
+float x_position = 0.0f;
+float y_position = 0.0f;
+float z_position = 0.0f;
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
   // pause
     if (key == GLFW_KEY_P && action == GLFW_PRESS)
         isPaused = !isPaused;
   // move left
+    if (key == GLFW_KEY_W && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
+        z_position += 1.0f;
+        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(x_position, y_position, z_position));
+    } else if (key == GLFW_KEY_S && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
+        z_position -= 1.0f;
+        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(x_position, y_position, z_position));
+    } else if (key == GLFW_KEY_A && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
+        x_position -= 1.0f;
+        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(x_position, y_position, z_position));
+    } else if (key == GLFW_KEY_D && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
+        x_position += 1.0f;
+        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(x_position, y_position, z_position));
+    } else if (key == GLFW_KEY_UP && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
+        y_position += 1.0f;
+        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(x_position, y_position, z_position));
+    } else if (key == GLFW_KEY_DOWN && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
+        y_position -= 1.0f;
+        ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(x_position, y_position, z_position));
+    }
   // move up
   // move don
   // move right
@@ -160,8 +184,6 @@ int main( void )
                                        glm::vec3(0,0,0),                 // and looks at the origin
                                        glm::vec3(0,1,0)                  // Head is up (set to 0,-1,0 to look upside-down)
                                        );
-        glm::mat4 ModelMatrix = glm::mat4(1.0);
-        ModelMatrix = glm::translate(ModelMatrix, glm::vec3(10.0f, 0.0f, 0.0f));
         glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
         // Send our transformation to the currently bound shader,
