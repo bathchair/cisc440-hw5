@@ -271,10 +271,10 @@ int main( void )
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         for (int i = 1; i < position_array.size(); i++) {
-            if (frameCount % 5 == 0) {
-                float delta1 = position_array[i].x + (1 - rand() % 3);
-                float delta2 = position_array[i].y + (1 - rand() % 3);
-                float delta3 = position_array[i].z + (1 - rand() % 3);
+            if ((frameCount % 5 == 0) && (!isPaused)) {
+                float delta1 = position_array[i].x + (.1f - rand() % 3 / 10);
+                float delta2 = position_array[i].y + (.1f - rand() % 3 / 10);
+                float delta3 = position_array[i].z + (.1f - rand() % 3 / 10);
                 
                 if (delta1 > 15) {
                     delta1 = 15;
@@ -313,7 +313,7 @@ int main( void )
                 position_array[i].y = 15 - rand() % 30;
                 position_array[i].z = 15 - rand() % 30;
                 
-                size_array[0] = size_array[0] + 0.1f;
+                size_array[0] = size_array[0] + 0.02f;
                 score++;
                 
                 TranslationMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[i].x, position_array[i].y, position_array[i].z));
