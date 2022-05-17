@@ -35,6 +35,8 @@ glm::mat4 ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(0.0f, 0.0f, 0.0
 float x_position = 0.0f;
 float y_position = 0.0f;
 float z_position = 0.0f;
+int frameCount = 0;
+int score = 0;
 
 std::vector <glm::vec3> position_array;
 std::vector <float> size_array;
@@ -52,7 +54,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
   // pause
     if (key == GLFW_KEY_P && action == GLFW_PRESS)
         isPaused = !isPaused;
-  // move left
     if (key == GLFW_KEY_W && !isPaused && (action == GLFW_REPEAT || action == GLFW_PRESS)) {
         position_array[0].z += 1.0f;
         ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[0].x, position_array[0].y, position_array[0].z));
@@ -72,9 +73,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         position_array[0].y -= 1.0f;
         ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[0].x, position_array[0].y, position_array[0].z));
     }
-  // move up
-  // move don
-  // move right
 }
 
 void draw(glm::mat4 M) {
@@ -136,8 +134,7 @@ void draw(glm::mat4 M) {
 
 int main( void )
 {
-    
-    position_array.push_back(glm::vec3(0, 0, 0));
+    position_array.push_back(glm::vec3(0,0,0));
     size_array.push_back(2.0f);
     
     position_array.push_back(glm::vec3(5, 1, 5));
@@ -250,19 +247,56 @@ int main( void )
         
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        
+        for (int i = 1; i < position_array.size(); i++) {
+            if (frameCount % 5 == 0) {
+                float delta1 = position_array[i].x + (1 - rand() % 3);
+                float delta2 = position_array[i].y + (1 - rand() % 3);
+                float delta3 = position_array[i].z + (1 - rand() % 3);
+                
+                if (delta1 > 15) {
+                    delta1 = 15;
+                }
+                if (delta1 < -15) {
+                    delta1 = -15;
+                }
+                if (delta2 > 15) {
+                    delta2 = 15;
+                }
+                if (delta2 < -15) {
+                    delta2 = -15;
+                }
+                if (delta3 > 15) {
+                    delta3 = 15;
+                }
+                if (delta3 < -15) {
+                    delta3 = -15;
+                }
+                
+                position_array[i].x = delta1;
+                position_array[i].y = delta2;
+                position_array[i].z = delta3;
+            }
+        }
+        
         for (int i = 0; i < position_array.size(); i++) {
             glm::mat4 ScaleMatrix = glm::scale(glm::vec3(size_array[i], size_array[i], size_array[i]));
-            glm::mat4 TranslationMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[0].x + position_array[i].x, position_array[0].y + position_array[i].y, position_array[0].z + position_array[i].z));
+            glm::mat4 TranslationMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[i].x, position_array[i].y, position_array[i].z));
+            
+            if (i == 0) {
+                ScaleMatrix = glm::scale(glm::vec3(size_array[i], size_array[i], size_array[i]));
+                TranslationMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[i].x, position_array[i].y, position_array[i].z));
+            }
             draw(TranslationMatrix * ScaleMatrix);
         }
 
         // Swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
+        frameCount++;
 
     } // Check if the ESC key was pressed or the window was closed
-    while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
+    while( glfwGetKey(window, GLFW_KEY_M ) != GLFW_PRESS &&
            glfwWindowShouldClose(window) == 0 );
 
     // Cleanup VBO and shader
