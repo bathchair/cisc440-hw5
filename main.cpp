@@ -334,7 +334,7 @@ int main( void )
         frameCount++;
 
     } // Check if the ESC key was pressed or the window was closed
-    while( glfwGetKey(window, GLFW_KEY_M ) != GLFW_PRESS &&
+    while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
            glfwWindowShouldClose(window) == 0 );
 
     // Cleanup VBO and shader
