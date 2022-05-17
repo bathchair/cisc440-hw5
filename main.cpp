@@ -76,7 +76,21 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
-
+bool isCollision(float x, float y, float z) {
+    float displace = 0.5f;
+    
+    if ((position_array[0].x - x) < displace && (position_array[0].x - x) > displace * -1) {
+        return true;
+    }
+    if ((position_array[0].y - y) < displace && (position_array[0].y - y) > displace * -1) {
+        return true;
+    }
+    if ((position_array[0].z - z) < displace && (position_array[0].z - z) > displace * -1) {
+        return true;
+    }
+    
+    return false;
+}
 
 void draw(glm::mat4 M) {
     // Use our shader
@@ -138,11 +152,13 @@ void draw(glm::mat4 M) {
 int main( void )
 {
     position_array.push_back(glm::vec3(0,0,0));
-    size_array.push_back(2.0f);
+    size_array.push_back(0.5f);
     
-    position_array.push_back(glm::vec3(5, 1, 5));
-    position_array.push_back(glm::vec3(2, 2, 1));
-    position_array.push_back(glm::vec3(10, 1, 7));
+    position_array.push_back(glm::vec3(5, 5, 5));
+    position_array.push_back(glm::vec3(3, 14, 14));
+    position_array.push_back(glm::vec3(10, 15, 7));
+    position_array.push_back(glm::vec3(14, 9, 3));
+    size_array.push_back(1.0f);
     size_array.push_back(1.0f);
     size_array.push_back(1.0f);
     size_array.push_back(1.0f);
@@ -286,11 +302,24 @@ int main( void )
         }
         
         for (int i = 0; i < position_array.size(); i++) {
-            glm::mat4 ScaleMatrix = glm::scale(glm::vec3(size_array[i], size_array[i], size_array[i]));
-            glm::mat4 TranslationMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[i].x, position_array[i].y, position_array[i].z));
+            glm::mat4 ScaleMatrix;
+            glm::mat4 TranslationMatrix;
+            
+            ScaleMatrix = glm::scale(glm::vec3(size_array[i], size_array[i], size_array[i]));
+            TranslationMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[i].x, position_array[i].y, position_array[i].z));
+            
+            if (i != 0 && isCollision(position_array[i].x, position_array[i].y, position_array[i].z)) {
+                position_array[i].x = 15 - rand() % 30;
+                position_array[i].y = 15 - rand() % 30;
+                position_array[i].z = 15 - rand() % 30;
+                
+                size_array[0] = size_array[0] + 0.1f;
+                score++;
+                
+                TranslationMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[i].x, position_array[i].y, position_array[i].z));
+            }
             
             if (i == 0) {
-                ScaleMatrix = glm::scale(glm::vec3(size_array[i], size_array[i], size_array[i]));
                 TranslationMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[i].x, position_array[i].y, position_array[i].z));
             }
             draw(TranslationMatrix * ScaleMatrix);
