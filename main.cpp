@@ -102,7 +102,7 @@ bool isCollision(float x, float y, float z) {
     return false;
 }
 
-void draw(glm::mat4 M) {
+void draw(glm::mat4 M, int i) {
     // Use our shader
     glUseProgram(programID);
     
@@ -124,7 +124,12 @@ void draw(glm::mat4 M) {
 
     // Bind our texture in Texture Unit
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, Texture);
+    
+    if (i == 0) {
+        glBindTexture(GL_TEXTURE_2D, GL_RED);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, Texture);
+    }
     // Set our "myTextureSampler" sampler to use Texture Unit 0
     glUniform1i(TextureID, 0);
     
@@ -335,7 +340,7 @@ int main( void )
                     if (i == 0) {
                         TranslationMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[i].x, position_array[i].y, position_array[i].z));
                     }
-                    draw(TranslationMatrix * ScaleMatrix);
+                    draw(TranslationMatrix * ScaleMatrix, i);
                 }
 
                 sprintf(text, "Score: %d", score);
