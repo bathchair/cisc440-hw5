@@ -19,6 +19,7 @@ using namespace glm;
 
 #include <common/shader.hpp>
 #include <common/texture.hpp>
+#include <common/text2D.hpp>
 #include <common/controls.hpp>
 #include <common/objloader.hpp>
 
@@ -74,6 +75,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         ModelMatrix = glm::translate(glm::mat4(1.0), glm::vec3(position_array[0].x, position_array[0].y, position_array[0].z));
     }
 }
+
+
 
 void draw(glm::mat4 M) {
     // Use our shader
@@ -242,6 +245,9 @@ int main( void )
     glGenBuffers(1, &uvbuffer_ast);
     glBindBuffer(GL_ARRAY_BUFFER, uvbuffer_ast);
     glBufferData(GL_ARRAY_BUFFER, uvs_ast.size() * sizeof(glm::vec2), &uvs_ast[0], GL_STATIC_DRAW);
+    
+    initText2D( "Holstein.DDS" );
+    char text[256];
 
     do{
         
@@ -290,6 +296,9 @@ int main( void )
             draw(TranslationMatrix * ScaleMatrix);
         }
 
+        sprintf(text,"Score: %d", score);
+        printText2D(text, 10, 30, 60);
+        
         // Swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -305,6 +314,8 @@ int main( void )
     glDeleteProgram(programID);
     glDeleteTextures(1, &Texture);
     glDeleteVertexArrays(1, &VertexArrayID);
+    
+    cleanupText2D();
 
     // Close OpenGL window and terminate GLFW
     glfwTerminate();
